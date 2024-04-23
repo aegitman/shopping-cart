@@ -148,8 +148,10 @@ function checkClearActionAvailability() {
  * Retrieves todos from local storage and dynamically creates HTML elements for each todo.
  */
 function getLocalTodos() {
+    checkForceClean();
+
     let todos = loadTodosFromLocalStorage();
-   
+
     todos.forEach(function(todo) {
         // todo div
         const todoDiv = document.createElement("div");
@@ -200,3 +202,12 @@ function computeNextId(todos) {
     });
     return nextId + 1;
 }
+
+function checkForceClean() {
+    const queryString = window.location.search;
+
+    if (queryString.includes("forceClean=true")) {
+        localStorage.removeItem("todos");
+    }
+}
+
