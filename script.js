@@ -5,7 +5,7 @@ const clearTodos = document.querySelector(".clear-todos");
 
 
 document.addEventListener("DOMContentLoaded", getLocalTodos);
-todoButton.addEventListener("click", addTodo);
+todoInput.addEventListener("keyup", addTodo);
 todoList.addEventListener("click", deleteCheck);
 clearTodos.addEventListener("click", removeCompletedLocalTodos);
 
@@ -17,6 +17,14 @@ clearTodos.addEventListener("click", removeCompletedLocalTodos);
  * @return {void} This function does not return a value.
  */
 function addTodo(event) {
+
+    //if key is enter, add todo
+    if (event.key === "Enter") {
+        // console.log("Save TODO");
+    } else {
+        return;
+    }
+
     // prevent form from submitting
     event.preventDefault();
     // todo div
