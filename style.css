@@ -98,3 +98,13 @@ form input {
     font-size: 1rem;
     text-decoration: none;
 }
+
+.clear-todos-div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hidden {
+    display: none;
+}

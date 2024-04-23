@@ -2,6 +2,7 @@ const todoInput = document.querySelector(".todo-input");
 const todoButton = document.querySelector(".todo-button");
 const todoList = document.querySelector(".todo-list");
 const clearTodos = document.querySelector(".clear-todos");
+const clearTodosDiv = document.querySelector(".clear-todos-div");
 
 
 document.addEventListener("DOMContentLoaded", getLocalTodos);
@@ -25,22 +26,25 @@ function addTodo(event) {
         return;
     }
 
+    // check if input is empty
+    if (todoInput.value === "") {
+        return;
+    }
+
     // prevent form from submitting
     event.preventDefault();
     // todo div
     const todoDiv = document.createElement("div");
     todoDiv.classList.add("todo");
-    // check if input is empty
-    if (todoInput.value === "") {
-        return;
-    }
+    
     // create li
     const newTodo = document.createElement("li");
     newTodo.innerText = todoInput.value;
     newTodo.classList.add("todo-item");
     todoDiv.appendChild(newTodo);
     // add todo to local storage
-    saveLocalTodos(todoInput.value);
+    let savedId = saveLocalTodos(todoInput.value);
+    todoDiv.setAttribute("data-id", savedId);
     // check mark button
     const completedButton = document.createElement("button");
     completedButton.innerHTML = '<i class="fas fa-check-circle fa-lg"></i>';
@@ -67,20 +71,21 @@ function deleteCheck(e) {
     if (item.classList[0] === "complete-btn") {
         const todo = item.parentElement;
         todo.classList.toggle("completed");
-        toggleLocalTodoCompleted(todo);
+        toggleLocalTodoCompleted(Number(todo.getAttribute("data-id")));
+        checkClearActionAvailability();
     }
 }
 
 /**
  * Toggles the completion status of a todo item in local storage.
  *
- * @param {HTMLElement} todoParam - The HTML element representing the todo item.
+ * @param {HTMLElement} todoParamId - The id of the todo item to be toggled.
  * @return {void} This function does not return a value.
  */
-function toggleLocalTodoCompleted(todoParam) {
+function toggleLocalTodoCompleted(todoParamId) {
     let todos = loadTodosFromLocalStorage();
     todos.forEach(function(todo) {
-        if (todo.name === todoParam.children[0].innerText) {
+        if (todo.id === todoParamId) {
             todo.completed = !todo.completed;
         }
     });
@@ -92,14 +97,17 @@ function toggleLocalTodoCompleted(todoParam) {
  * A function that saves a new todo item to local storage.
  *
  * @param {string} todo - The new todo item to be saved.
- * @return {void} This function does not return a value.
+ * @return {integer} Return the id of the element in local storage.
  */
 function saveLocalTodos(todo) {
     // check if i already have things in there
     let todos = loadTodosFromLocalStorage();
+    let nextId = computeNextId(todos);
    
-    todos.push({name: todo, completed: false});
+    todos.push({name: todo, completed: false, id: nextId});
     localStorage.setItem("todos", JSON.stringify(todos));
+
+    return nextId;
 }
 
 /**
@@ -117,6 +125,22 @@ function removeCompletedLocalTodos() {
     // reload from local storage
     todoList.innerHTML = "";
     getLocalTodos();
+}
+
+function checkClearActionAvailability() {
+    let todos = loadTodosFromLocalStorage();
+    let isAtLeastOneCompleted = false;
+    todos.forEach(function(todo) {
+        if (todo.completed === true) {
+            isAtLeastOneCompleted = true;
+        }
+    });
+
+    if (!isAtLeastOneCompleted) {
+        clearTodosDiv.classList.add("hidden");
+    } else {
+        clearTodosDiv.classList.remove("hidden");
+    }
 }
 
 
@@ -138,6 +162,7 @@ function getLocalTodos() {
             todoDiv.classList.add("completed");
         }
         todoDiv.appendChild(newTodo);
+        todoDiv.setAttribute("data-id", todo.id);
         // check mark button
         const completedButton = document.createElement("button");
         completedButton.innerHTML = '<i class="fas fa-check-circle fa-lg"></i>';
@@ -147,6 +172,8 @@ function getLocalTodos() {
         // append to list
         todoList.appendChild(todoDiv);
     });
+
+    checkClearActionAvailability();
 }
 
 /**
@@ -162,4 +189,14 @@ function loadTodosFromLocalStorage() {
         todos = JSON.parse(localStorage.getItem("todos"));
     }
     return todos;
+}
+
+function computeNextId(todos) {
+    let nextId = 0;
+    todos.forEach(function(todo) {
+        if (todo.id > nextId) {
+            nextId = todo.id;
+        }
+    });
+    return nextId + 1;
 }
