@@ -4,12 +4,13 @@ const todoList = document.querySelector(".todo-list");
 const clearTodos = document.querySelector(".clear-todos");
 const clearTodosDiv = document.querySelector(".clear-todos-div");
 
-
-document.addEventListener("DOMContentLoaded", getLocalTodos);
+document.addEventListener("DOMContentLoaded", initActions());
 todoInput.addEventListener("keyup", addTodo);
 todoList.addEventListener("click", deleteCheck);
 clearTodos.addEventListener("click", removeCompletedLocalTodos);
 
+var pages = [0];
+var currentPage = 0;
 
 /**
  * Adds a new todo item to the list and saves it to local storage.
@@ -18,6 +19,8 @@ clearTodos.addEventListener("click", removeCompletedLocalTodos);
  * @return {void} This function does not return a value.
  */
 function addTodo(event) {
+    // prevent form from submitting
+    event.preventDefault();
 
     //if key is enter, add todo
     if (event.key === "Enter") {
@@ -31,8 +34,6 @@ function addTodo(event) {
         return;
     }
 
-    // prevent form from submitting
-    event.preventDefault();
     // todo div
     const todoDiv = document.createElement("div");
     todoDiv.classList.add("todo");
@@ -83,7 +84,7 @@ function deleteCheck(e) {
  * @return {void} This function does not return a value.
  */
 function toggleLocalTodoCompleted(todoParamId) {
-    let todos = loadTodosFromLocalStorage();
+    let todos = loadTodosFromLocalStorage(false);
     todos.forEach(function(todo) {
         if (todo.id === todoParamId) {
             todo.completed = !todo.completed;
@@ -101,10 +102,10 @@ function toggleLocalTodoCompleted(todoParamId) {
  */
 function saveLocalTodos(todo) {
     // check if i already have things in there
-    let todos = loadTodosFromLocalStorage();
+    let todos = loadTodosFromLocalStorage(false);
     let nextId = computeNextId(todos);
    
-    todos.push({name: todo, completed: false, id: nextId});
+    todos.push({name: todo, completed: false, id: nextId, page: currentPage});
     localStorage.setItem("todos", JSON.stringify(todos));
 
     return nextId;
@@ -116,7 +117,7 @@ function saveLocalTodos(todo) {
  * @return {void} This function does not return a value.
  */
 function removeCompletedLocalTodos() {
-    let todos = loadTodosFromLocalStorage();
+    let todos = loadTodosFromLocalStorage(false);
     todos = todos.filter(function(todo) {
         return !todo.completed;
     });
@@ -124,7 +125,7 @@ function removeCompletedLocalTodos() {
 
     // reload from local storage
     todoList.innerHTML = "";
-    getLocalTodos();
+    getLocalTodos(currentPage);
 }
 
 function checkClearActionAvailability() {
@@ -143,13 +144,22 @@ function checkClearActionAvailability() {
     }
 }
 
+function initActions() {
+    // check force clean parameter
+    checkForceClean();
+    
+    // configure hammer - swipe actions on container
+    configureHammer();
+
+    // load from local storage
+    getLocalTodos();
+}
 
 /**
  * Retrieves todos from local storage and dynamically creates HTML elements for each todo.
  */
-function getLocalTodos() {
-    checkForceClean();
-
+function getLocalTodos(pageId = 0) {
+    currentPage = pageId;
     let todos = loadTodosFromLocalStorage();
 
     todos.forEach(function(todo) {
@@ -178,17 +188,93 @@ function getLocalTodos() {
     checkClearActionAvailability();
 }
 
+function configureHammer() {
+    var todoContainer = new Hammer.Manager(document.querySelector(".todo-container"), {
+        recognizers: [
+            // RecognizerClass, [options], [recognizeWith, ...], [requireFailure, ...]
+            [Hammer.Swipe,{ direction: Hammer.DIRECTION_HORIZONTAL }],
+        ]
+    });
+
+    var pageToggler = new Hammer.Manager(document.querySelector(".page-toggler"), {
+        recognizers: [
+            // RecognizerClass, [options], [recognizeWith, ...], [requireFailure, ...]
+            [Hammer.Swipe,{ direction: Hammer.DIRECTION_HORIZONTAL }],
+        ]
+    });
+
+    todoContainer.on("swipe", function(ev) {
+        handleContainerSwipe(ev);
+    })
+
+    pageToggler.on("swipe", function(ev) {
+        handleContainerSwipe(ev);
+    })
+}
+
+
+function handleContainerSwipe(ev) {
+    let dir = ev.direction === 4 ? -1 : 1;
+    addPageIndications(dir);    
+    todoList.innerHTML = "";
+    currentPage += dir;
+    getLocalTodos(currentPage);
+}
+
+function addPageIndications(dir) {
+    let currPage = document.querySelector(".page-curr");
+
+    let newCurr = document.createElement("span");
+    newCurr.classList.add("page-curr");
+        
+    if(dir > 0) {
+        if(currPage.nextElementSibling == null ) {
+            // if there si no element in that direction add one and update the current
+            currPage.after(newCurr);
+        } else {
+            let nextPage = currPage.nextElementSibling;
+            nextPage.classList.remove("page-pass");
+            nextPage.classList.add("page-curr");        
+        }
+            
+    } else {
+        if(currPage.previousElementSibling == null) {
+            // if there si no element in that direction add one and update the current
+            currPage.before(newCurr);
+        } else {
+            let prevPage = currPage.previousElementSibling;
+            prevPage.classList.remove("page-pass");
+            prevPage.classList.add("page-curr");       
+        }
+    }
+    let currTodos = loadTodosFromLocalStorage();
+    if(currTodos.length == 0) {
+        currPage.remove();
+    } else {
+        currPage.classList.remove("page-curr");
+        currPage.classList.add("page-pass");
+    }    
+}
+
 /**
  * Loads todos from local storage.
  *
  * @return {Array} An array of todos, or an empty array if no todos are found in local storage.
  */
-function loadTodosFromLocalStorage() {
+function loadTodosFromLocalStorage(page = true) {
     let todos;
     if (localStorage.getItem("todos") === null) {
         todos = [];
     } else {
         todos = JSON.parse(localStorage.getItem("todos"));
+        if(page) {
+            // filter for todos in a certain page
+            todos = todos.filter(function(todo) {
+                return todo.page === currentPage || todo.page == undefined;
+            });
+        } else {
+            return todos;
+        }        
     }
     return todos;
 }

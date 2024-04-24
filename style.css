@@ -16,14 +16,14 @@ header {
 }
 
 header,
-form {
+div.todo-form {
     min-height: 10vh;
     display: flex;
     justify-content: center;
     align-items: center;
 }
 
-form input {
+div.todo-form input {
     padding: 0.5rem;
     font-size: 2rem;
     border: none;
@@ -107,4 +107,20 @@ form input {
 
 .hidden {
     display: none;
+}
+
+.page-toggler {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: darkgrey;
+}
+
+.page-pass::before {
+    content: "o"
+}
+
+.page-curr::before {
+    color: black;
+    content: "x"
 }

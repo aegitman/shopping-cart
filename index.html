@@ -20,13 +20,15 @@
 <body>
     
     <header>
-        <h1 class="title">Shopping Cart</h1>
-        
+        <h1 class="title">Shopping Cart</h1>   
     </header>
+    <div class="page-toggler">
+        <span class="page-curr"></span>
+    </div>
 
-    <form action="">        
-        <input type="text" class="todo-input" placeholder="Enter new item"/>      
-    </form>
+    <div class="todo-form">
+        <input type="text" class="todo-input" placeholder="Enter new item . . ."/>      
+    </div>
 
     <div class="todo-container">
         <ul class="todo-list"></ul>        
@@ -35,6 +37,7 @@
         <a href="#" class="clear-todos">Clear Completed</a>
     </div>
 
+    <script src="./hammer.js"></script>
     <script src="./script.js"></script>
 </body>
 </html>
